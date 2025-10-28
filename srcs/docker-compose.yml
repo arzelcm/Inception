@@ -1,20 +1,63 @@
+name: inception
+
 services:
-  nginx:
-    build: ./nginx
-    ports:
-      - "80:80"
-      - "443:443"
+  # nginx:
+  #   build: ./nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./secrets:/etc/nginx/secrets:ro
+  #     - ./data/nginx:/var/log/nginx
+  #   depends_on:
+  #     - php-fpm
+  #   networks:
+  #     - web
+  #   restart: always
+  mariadb:
+    container_name: mariadb
+    build: requirements/mariadb
     volumes:
-      - ./secrets:/etc/nginx/secrets:ro
-      - ./data/nginx:/var/log/nginx
-    depends_on:
-      - php-fpm
+      - database:/var/log/mariadb
     networks:
-      - backend
-      - frontend
+      - database
+    secrets:
+      - database_name
+      - database_user_name
+      - database_user_password
+    env_file: .env
     restart: always
+  
 networks:
-  frontend:
+  database:
     driver: bridge
-  backend:
+  web:
     driver: bridge
+
+volumes:
+  database:
+    driver: local
+    driver_opts:
+      type: none
+      device: ../volumes/mariadb
+      o: bind
+
+secrets:
+  database_name:
+    file: ${DATABASE_NAME_SECRET_PATH}
+  database_user_name:
+    file: ${DATABASE_USER_NAME_SECRET_PATH}
+  database_user_password:
+    file: ${DATABASE_USER_PASSWORD_SECRET_PATH}
+  # website_admin_email:
+  #   file: ${WEBSITE_ADMIN_EMAIL_SECRET_PATH}
+  # website_admin_password:
+  #   file: ${WEBSITE_ADMIN_PASSWORD_SECRET_PATH}
+  # website_admin_user:
+  #   file: ${WEBSITE_ADMIN_USER_SECRET_PATH}
+  # website_author_password:
+  #   file: ${WEBSITE_AUTHOR_PASSWORD_SECRET_PATH}
+  # ftp_user:
+  #   file: ${FTP_USER_SECRET_PATH}
+  # ftp_password:
+  #   file: ${FTP_PASSWORD_SECRET_PATH}
