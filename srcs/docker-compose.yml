@@ -1,19 +1,6 @@
 name: inception
 
 services:
-  # nginx:
-  #   build: ./nginx
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./secrets:/etc/nginx/secrets:ro
-  #     - ./data/nginx:/var/log/nginx
-  #   depends_on:
-  #     - php-fpm
-  #   networks:
-  #     - web
-  #   restart: always
   mariadb:
     container_name: mariadb
     build: requirements/mariadb
@@ -27,7 +14,15 @@ services:
       - database_user_password
     env_file: .env
     restart: always
-  
+  nginx:
+    container_name: nginx
+    build: requirements/nginx
+    ports:
+      - "443:443"
+    volumes:
+      - web:/var/www/html
+    restart: always
+
 networks:
   database:
     driver: bridge
@@ -40,6 +35,12 @@ volumes:
     driver_opts:
       type: none
       device: ../volumes/mariadb
+      o: bind
+  web:
+    driver: local
+    driver_opts:
+      type: none
+      device: ../volumes/web
       o: bind
 
 secrets:
