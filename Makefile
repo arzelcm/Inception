@@ -21,93 +21,132 @@ CYAN = \033[0;36m
 
 
 # ---- # Vars # ---- #
-RM = rm -rf
+COPY = cp -rf
+RMV = rm -rf
 MKDIR = mkdir -p
 PRINT = echo
 DOCKER = docker
 
-SRC = src/
-BASE_YAML = $(SRC)docker-compose.yml
-DEV_YAML = $(SRC)docker-compose.dev.yml
-PROD_YAML = $(SRC)docker-compose.prod.yml
+MARIADB = mariadb
+WORDPRESS = wordpress
+NGINX = nginx
 
-VOLUMES_DIR=volumes/
-DATABASE_VOLUME=$(VOLUMES_DIR)database/
-UPLOADS_VOLUME=$(VOLUMES_DIR)uploads/
-WEB_VOLUME=$(VOLUMES_DIR)web/
 
+SRCS = srcs/
+REQS := $(SRCS)requirements/
+MARIADB_DIR := $(REQS)mariadb/
+WORDPRESS_DIR := $(REQS)wordpress/
+NGINX_DIR := $(REQS)nginx/
+ENV_FILE := $(SRCS).env
+YAML := $(SRCS)docker-compose.yml
+
+VOLUMES_PATH = ./data/
+DATABASE_VOLUME := $(VOLUMES_PATH)database/
+WEBSITE_VOLUME := $(VOLUMES_PATH)web/
+# ------------------ #
+
+
+# --- # Rules # ---- #
 all:
-	@$(PRINT) "$(CYAN)Use $(YELLOW)'make prod'$(CYAN) to build the application (or $(YELLOW)'make up'$(CYAN) to build it as development) $(RESET)"
+	$(PRINT) "$(CYAN)Use $(YELLOW)'make up'$(CYAN) to build the application$(RESET)"
+
+copy:
+	$(PRINT) "$(PINK)Copying files to $(WHITE_BOLD)VM$(PINK)...$(RESET)"
+	$(COPY) * $(ENV_FILE)
+	$(PRINT) "$(GREEN)Files copied$(RESET)"
 
 list:
-	@$(PRINT) "$(CYAN)Printing all $(YELLOW)containers$(CYAN):$(RESET)"
-	@$(DOCKER) ps -a
-	@$(PRINT) "$(CYAN)Printing all $(YELLOW)images$(CYAN):$(RESET)"
-	@$(DOCKER) images -a
-	@$(PRINT) "$(CYAN)Printing all $(YELLOW)volumes$(CYAN):$(RESET)"
-	@$(DOCKER) volume ls
-	@$(PRINT) "$(CYAN)Printing all $(YELLOW)networks$(CYAN):$(RESET)"
-	@$(DOCKER) network ls
+	$(PRINT) "$(CYAN)Printing all $(YELLOW)containers$(CYAN):$(RESET)"
+	$(DOCKER) ps -a
+	$(PRINT) "$(CYAN)Printing all $(YELLOW)images$(CYAN):$(RESET)"
+	$(DOCKER) images -a
+	$(PRINT) "$(CYAN)Printing all $(YELLOW)volumes$(CYAN):$(RESET)"
+	$(DOCKER) volume ls
+	$(PRINT) "$(CYAN)Printing all $(YELLOW)networks$(CYAN):$(RESET)"
+	$(DOCKER) network ls
 
-up:
-	@$(PRINT) "$(BLUE)Creating $(WHITE_BOLD)volumes$(BLUE) directories...$(RESET)"
-	@$(MKDIR) $(DATABASE_VOLUME) $(UPLOADS_VOLUME) $(WEB_VOLUME)
-	@$(PRINT) "$(BLUE)Deploying $(WHITE_BOLD)application$(BLUE)...$(RESET)"
-	@$(DOCKER) compose -f $(BASE_YAML) -f $(DEV_YAML) up -d --build
+up: data
+	$(PRINT) "$(BLUE)Deploying $(WHITE_BOLD)application$(BLUE)...$(RESET)"
+	$(DOCKER) compose -f $(YAML) up -d --build
 
-prod:
-	@$(PRINT) "$(BLUE)Creating $(WHITE_BOLD)volumes$(BLUE) directories...$(RESET)"
-	@$(MKDIR) $(DATABASE_VOLUME) $(UPLOADS_VOLUME) $(WEB_VOLUME)
-	@$(PRINT) "$(BLUE)Deploying $(WHITE_BOLD)application$(BLUE)...$(RESET)"
-	@$(DOCKER) compose -f $(BASE_YAML) -f $(PROD_YAML) up -d --build
+data: data/database data/web
+	$(PRINT) "$(BLUE)Creating $(WHITE_BOLD)database$(BLUE) volume...$(RESET)"
+	$(MKDIR) $(DATABASE_VOLUME)
+
+data/database:
+	$(PRINT) "$(BLUE)Creating $(WHITE_BOLD)database$(BLUE) volume...$(RESET)"
+	$(MKDIR) $(DATABASE_VOLUME)
+
+data/web:
+	$(PRINT) "$(BLUE)Creating $(WHITE_BOLD)web$(BLUE) volume...$(RESET)"
+	$(MKDIR) $(WEBSITE_VOLUME)
+	$(PRINT) "$(BLUE)Fetching $(WHITE_BOLD)wordpress$(BLUE)...$(RESET)"
+	curl -LO https://wordpress.org/wordpress-6.8.3.tar.gz -o wordpress-6.8.3.tar.gz
+	tar -xvzf wordpress-6.8.3.tar.gz
+	$(COPY) wordpress/* $(WEBSITE_VOLUME)
+	$(RMV) wordpress wordpress-6.8.3.tar.gz
 
 down:
-	@$(PRINT) "$(BLUE)Stopping and removing application $(WHITE_BOLD)containers$(BLUE)...$(RESET)"
-	@$(DOCKER) compose -f $(BASE_YAML) down
+	$(PRINT) "$(BLUE)Stopping and removing application $(WHITE_BOLD)containers$(BLUE)...$(RESET)"
+	$(DOCKER) compose -f $(YAML) down
 
 fdown:
-	@$(PRINT) "$(BLUE)Stopping and removing application $(WHITE_BOLD)containers$(BLUE) and $(WHITE_BOLD)volumes$(BLUE)...$(RESET)"
-	@$(DOCKER) compose -f $(BASE_YAML) down -v
-	@$(RM) $(DATABASE_VOLUME) $(UPLOADS_VOLUME) $(WEB_VOLUME)
+	$(PRINT) "$(BLUE)Stopping and removing application $(WHITE_BOLD)containers$(BLUE) and $(WHITE_BOLD)volumes$(BLUE)...$(RESET)"
+	$(DOCKER) compose -f $(YAML) down -v
+	$(RMV) $(VOLUMES_PATH)
 
 log:
-	@while [ -z "$$TARGET" ]; do \
-		$(PRINT) -n "$(PINK)Type the container to read the logs of $(WHITE_BOLD)(front/game/nginx/platform)$(PINK): $(RESET)"; \
-		read -r -p "" TARGET; \
-	done; \
-	$(PRINT) "$(PINK)Reading $(WHITE_BOLD)$$TARGET$(PINK) logs...$(RESET)"; \
-	$(DOCKER) logs $$(docker ps -aq --filter="name=($$TARGET)")
+	$(PRINT) "$(PINK)Reading $(WHITE_BOLD)$(NGINX)$(PINK) logs...$(RESET)"
+	$(DOCKER) logs $(NGINX)
 
-interact:
-	@while [ -z "$$TARGET" ]; do \
-		$(PRINT) -n "$(PINK)Type the container to interact with $(WHITE_BOLD)(front/game/nginx/platform)$(PINK): $(RESET)"; \
-		read -r -p "" TARGET; \
-	done; \
-	$(PRINT) "$(PINK)Interacting with $(WHITE_BOLD)$$TARGET$(PINK) container with a $(WHITE_BOLD)bash$(PINK) shell...$(RESET)"; \
-	$(DOCKER) exec -it $$(docker ps -aq --filter="name=($$TARGET)") /bin/sh;
+bld:
+	$(PRINT) "$(PINK)Building $(WHITE_BOLD)$(NGINX)$(PINK) image...$(RESET)"
+	$(DOCKER) build -t $(NGINX) $(NGINX_DIR)
+
+run:
+	$(PRINT) "$(PINK)Running $(WHITE_BOLD)$(NGINX)$(PINK) container...$(RESET)"
+	$(DOCKER) run -d --name $(NGINX) $(NGINX)
+
+dpl: bld run
+	$(PRINT) "$(GREEN)The $(WHITE_BOLD)$(NGINX)$(GREEN) container deployed successfully$(RESET)"
+
+exc:
+	$(PRINT) "$(PINK)Interacting with $(WHITE_BOLD)$(NGINX)$(PINK) container with a $(WHITE_BOLD)bash$(PINK) shell...$(RESET)"
+	$(DOCKER) exec -it $$(docker ps -aq --filter="name=$(NGINX)") bash
+
+stp:
+	$(PRINT) "$(PINK)Stopping $(WHITE_BOLD)$(NGINX)$(PINK) container...$(RESET)"
+	$(DOCKER) stop $$(docker ps -aq --filter="name=$(NGINX)")
+
+cln: stp
+	$(PRINT) "$(PINK)Removing $(WHITE_BOLD)$(NGINX)$(PINK) container...$(RESET)"
+	$(DOCKER) rm $$(docker ps -aq --filter="name=$(NGINX)")
 
 clean: down
-	@$(PRINT) "$(PINK)Application $(GREEN)removed$(PINK).$(RESET)"
-	@$(DOCKER) system prune -fa
-	@$(PRINT) "$(GREEN)Cache removed successfully$(RESET)"
+	$(PRINT) "$(PINK)Application $(GREEN)removed$(PINK).$(RESET)"
 
 fclean: fdown
-	@$(PRINT) "$(PINK)Removing $(WHITE_BOLD)cache$(PINK)...$(RESET)"
-	@$(DOCKER) system prune -fa
-	@$(PRINT) "$(GREEN)Cache removed successfully$(RESET)"
+	$(PRINT) "$(PINK)Removing $(WHITE_BOLD)cache$(PINK)...$(RESET)"
+	$(DOCKER) system prune -fa
+	$(RMV) $(VOLUMES_PATH)
+	$(PRINT) "$(GREEN)Cache removed successfully$(RESET)"
 
 # ------------------ #
 
 
 # --- # Extras # --- #
 .PHONY: all \
+		copy \
 		list \
 		up \
-		prod \
 		down \
 		fdown \
-		log \
-		interact \
+		bld \
+		run \
+		dpl \
+		exc \
+		stp \
+		cln \
 		clean \
 		fclean
 
