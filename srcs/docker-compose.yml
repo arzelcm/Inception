@@ -3,6 +3,7 @@ name: inception
 services:
   mariadb:
     container_name: mariadb
+    image: mariadb:1
     build: requirements/mariadb
     volumes:
       - database:/var/log/mariadb
@@ -18,11 +19,31 @@ services:
     container_name: nginx
     image: nginx:1
     build: requirements/nginx
+    networks:
+      - web
     ports:
       - "443:443"
     volumes:
       - web:/var/www/html
     restart: always
+  wordpress:
+    container_name: wordpress
+    image: wordpress:6.8.3
+    build: requirements/wordpress
+    networks:
+      - web
+      - database
+    volumes:
+      - web:/var/www/html
+    restart: always
+    secrets:
+      - database_name
+      - database_user_name
+      - database_user_password
+    env_file: .env
+    depends_on:
+      - mariadb
+      - nginx
 
 networks:
   database:
@@ -35,13 +56,13 @@ volumes:
     driver: local
     driver_opts:
       type: none
-      device: ../volumes/mariadb
+      device: ../data/database
       o: bind
   web:
     driver: local
     driver_opts:
       type: none
-      device: ../volumes/web
+      device: ../data/web
       o: bind
 
 secrets:

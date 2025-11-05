@@ -80,9 +80,9 @@ data/database:
 data/web:
 	$(PRINT) "$(BLUE)Creating $(WHITE_BOLD)web$(BLUE) volume...$(RESET)"
 	$(MKDIR) $(WEBSITE_VOLUME)
-	$(PRINT) "$(BLUE)Fetching $(WHITE_BOLD)wordpress$(BLUE)...$(RESET)"
-	curl -LO https://wordpress.org/wordpress-6.8.3.tar.gz -o wordpress-6.8.3.tar.gz
-	tar -xvzf wordpress-6.8.3.tar.gz
+	$(PRINT) "$(BLUE)Fetching $(WHITE_BOLD)wordpress$(BLUE) asset...$(RESET)"
+	curl -fsSL https://wordpress.org/wordpress-6.8.3.tar.gz -o wordpress-6.8.3.tar.gz
+	tar -xzf wordpress-6.8.3.tar.gz > /dev/null 2>&1
 	$(COPY) wordpress/* $(WEBSITE_VOLUME)
 	$(RMV) wordpress wordpress-6.8.3.tar.gz
 
