@@ -3,21 +3,29 @@ name: inception
 services:
   mariadb:
     container_name: mariadb
-    image: mariadb:1
+    image: mariadb:mine
     build: requirements/mariadb
     volumes:
-      - database:/var/log/mariadb
+      - database:/var/lib/mysql
     networks:
       - database
+    ports:
+      - "3305:3306"
     secrets:
       - database_name
       - database_user_name
       - database_user_password
     env_file: .env
     restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   nginx:
     container_name: nginx
-    image: nginx:1
+    image: nginx:mine
     build: requirements/nginx
     networks:
       - web
@@ -25,7 +33,11 @@ services:
       - "443:443"
     volumes:
       - web:/var/www/html
+    depends_on:
+      wordpress:
+        condition: service_healthy
     restart: always
+
   wordpress:
     container_name: wordpress
     image: wordpress:6.8.3
@@ -40,10 +52,19 @@ services:
       - database_name
       - database_user_name
       - database_user_password
+      - website_admin_email
+      - website_admin_password
+      - website_admin_user
+      - website_author_password
     env_file: .env
     depends_on:
-      - mariadb
-      - nginx
+      mariadb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z 127.0.0.1 9000"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 networks:
   database:
@@ -72,14 +93,14 @@ secrets:
     file: ${DATABASE_USER_NAME_SECRET_PATH}
   database_user_password:
     file: ${DATABASE_USER_PASSWORD_SECRET_PATH}
-  # website_admin_email:
-  #   file: ${WEBSITE_ADMIN_EMAIL_SECRET_PATH}
-  # website_admin_password:
-  #   file: ${WEBSITE_ADMIN_PASSWORD_SECRET_PATH}
-  # website_admin_user:
-  #   file: ${WEBSITE_ADMIN_USER_SECRET_PATH}
-  # website_author_password:
-  #   file: ${WEBSITE_AUTHOR_PASSWORD_SECRET_PATH}
+  website_admin_email:
+    file: ${WEBSITE_ADMIN_EMAIL_SECRET_PATH}
+  website_admin_password:
+    file: ${WEBSITE_ADMIN_PASSWORD_SECRET_PATH}
+  website_admin_user:
+    file: ${WEBSITE_ADMIN_USER_SECRET_PATH}
+  website_author_password:
+    file: ${WEBSITE_AUTHOR_PASSWORD_SECRET_PATH}
   # ftp_user:
   #   file: ${FTP_USER_SECRET_PATH}
   # ftp_password:

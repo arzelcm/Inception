@@ -32,7 +32,7 @@ WORDPRESS = wordpress
 NGINX = nginx
 
 
-SRCS = srcs/
+SRCS := srcs/
 REQS := $(SRCS)requirements/
 MARIADB_DIR := $(REQS)mariadb/
 WORDPRESS_DIR := $(REQS)wordpress/
@@ -40,9 +40,11 @@ NGINX_DIR := $(REQS)nginx/
 ENV_FILE := $(SRCS).env
 YAML := $(SRCS)docker-compose.yml
 
-VOLUMES_PATH = ./data/
+ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+VOLUMES_PATH := $(ROOT)data/
 DATABASE_VOLUME := $(VOLUMES_PATH)database/
 WEBSITE_VOLUME := $(VOLUMES_PATH)web/
+
 # ------------------ #
 
 
@@ -65,26 +67,30 @@ list:
 	$(PRINT) "$(CYAN)Printing all $(YELLOW)networks$(CYAN):$(RESET)"
 	$(DOCKER) network ls
 
-up: data
+up: data/database data/web
+	$(MKDIR) $(VOLUMES_PATH)
+	$(MKDIR) $(WEBSITE_VOLUME)
+	$(MKDIR) $(DATABASE_VOLUME)
+	mkdir -p /Users/arzelcm/devThings/42/Inception/data/web
 	$(PRINT) "$(BLUE)Deploying $(WHITE_BOLD)application$(BLUE)...$(RESET)"
-	$(DOCKER) compose -f $(YAML) up -d --build
+	cd $(SRCS) && $(DOCKER) compose up -d --build
 
-data: data/database data/web
+data: 
+	$(PRINT) "$(BLUE)Creating $(WHITE_BOLD)volumes $(BLUE) directory...$(RESET)"
+	$(MKDIR) $(VOLUMES_PATH)
+
+data/database: data
 	$(PRINT) "$(BLUE)Creating $(WHITE_BOLD)database$(BLUE) volume...$(RESET)"
 	$(MKDIR) $(DATABASE_VOLUME)
 
-data/database:
-	$(PRINT) "$(BLUE)Creating $(WHITE_BOLD)database$(BLUE) volume...$(RESET)"
-	$(MKDIR) $(DATABASE_VOLUME)
-
-data/web:
+data/web: data
 	$(PRINT) "$(BLUE)Creating $(WHITE_BOLD)web$(BLUE) volume...$(RESET)"
 	$(MKDIR) $(WEBSITE_VOLUME)
-	$(PRINT) "$(BLUE)Fetching $(WHITE_BOLD)wordpress$(BLUE) asset...$(RESET)"
-	curl -fsSL https://wordpress.org/wordpress-6.8.3.tar.gz -o wordpress-6.8.3.tar.gz
-	tar -xzf wordpress-6.8.3.tar.gz > /dev/null 2>&1
-	$(COPY) wordpress/* $(WEBSITE_VOLUME)
-	$(RMV) wordpress wordpress-6.8.3.tar.gz
+# 	$(PRINT) "$(BLUE)Fetching $(WHITE_BOLD)wordpress$(BLUE) asset...$(RESET)"
+# 	curl -fsSL https://wordpress.org/wordpress-6.8.3.tar.gz -o wordpress-6.8.3.tar.gz
+# 	tar -xzf wordpress-6.8.3.tar.gz > /dev/null 2>&1
+# 	$(COPY) wordpress/* $(WEBSITE_VOLUME)
+# 	$(RMV) wordpress wordpress-6.8.3.tar.gz
 
 down:
 	$(PRINT) "$(BLUE)Stopping and removing application $(WHITE_BOLD)containers$(BLUE)...$(RESET)"
@@ -131,6 +137,9 @@ fclean: fdown
 	$(RMV) $(VOLUMES_PATH)
 	$(PRINT) "$(GREEN)Cache removed successfully$(RESET)"
 
+re: fclean up
+	$(PRINT) "$(GREEN)Application rebuilt successfully$(RESET)"
+
 # ------------------ #
 
 
@@ -148,7 +157,8 @@ fclean: fdown
 		stp \
 		cln \
 		clean \
-		fclean
+		fclean \
+		re
 
 .SILENT:
 # ------------------ #
