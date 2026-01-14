@@ -93,7 +93,7 @@ data/web: data
 # 	$(RMV) wordpress wordpress-6.8.3.tar.gz
 
 down:
-	$(PRINT) "$(BLUE)Stopping and removing application $(WHITE_BOLD)containers$(BLUE)...$(RESET)"
+	$(PRINT) "$(BLUE)Stopping application $(WHITE_BOLD)containers$(BLUE)...$(RESET)"
 	$(DOCKER) compose -f $(YAML) down
 
 fdown:
