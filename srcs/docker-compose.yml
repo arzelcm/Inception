@@ -77,14 +77,14 @@ volumes:
     driver: local
     driver_opts:
       type: none
-      device: ../data/database
+      device: ${HOME}/data/database
       o: bind
 
   web:
     driver: local
     driver_opts:
       type: none
-      device: ../data/web
+      device: ${HOME}/data/web
       o: bind
 
 secrets:
