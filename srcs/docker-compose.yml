@@ -79,6 +79,7 @@ volumes:
       type: none
       device: ../data/database
       o: bind
+
   web:
     driver: local
     driver_opts:

@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# Ensure permissions are correct after volume mount
+chmod 755 /var/www/html
+chown -R www-data:www-data /var/www/html
+chmod 755 /run/php
+chown -R www-data:www-data /run/php
 
 install_and_configure_wordpress()
 {
