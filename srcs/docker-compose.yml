@@ -9,8 +9,6 @@ services:
       - database:/var/lib/mysql
     networks:
       - database
-    ports:
-      - "3305:3306"
     secrets:
       - database_name
       - database_user_name
@@ -102,7 +100,3 @@ secrets:
     file: ${WEBSITE_ADMIN_USER_SECRET_PATH}
   website_author_password:
     file: ${WEBSITE_AUTHOR_PASSWORD_SECRET_PATH}
-  # ftp_user:
-  #   file: ${FTP_USER_SECRET_PATH}
-  # ftp_password:
-  #   file: ${FTP_PASSWORD_SECRET_PATH}
