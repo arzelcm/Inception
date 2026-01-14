@@ -49,8 +49,7 @@ WEBSITE_VOLUME := $(VOLUMES_PATH)web/
 
 
 # --- # Rules # ---- #
-all:
-	$(PRINT) "$(CYAN)Use $(YELLOW)'make up'$(CYAN) to build the application$(RESET)"
+all: up
 
 copy:
 	$(PRINT) "$(PINK)Copying files to $(WHITE_BOLD)VM$(PINK)...$(RESET)"
