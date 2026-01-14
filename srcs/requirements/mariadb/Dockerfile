@@ -7,5 +7,5 @@ COPY --chmod=755 ./tools/init.sh /etc/init.sh
 
 RUN mkdir -p /run/mysqld && chown -R mysql:mysql /run/mysqld
 EXPOSE 3306
-# USER mysql | TODO: switch to mysql user after testing
+
 ENTRYPOINT [ "/etc/init.sh" ]

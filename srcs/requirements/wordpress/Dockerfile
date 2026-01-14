@@ -14,7 +14,6 @@ RUN apk add --no-cache \
     php83-opcache \
     php83-session \
     php83-ctype
-	# php83-redis | TODO: Bonus
 
 COPY ./conf/fpm-pool.conf /etc/php83/php-fpm.d/www.conf
 COPY --chmod=555 ./tools/init.sh /etc/init.sh
@@ -42,4 +41,3 @@ EXPOSE 9000
 
 ENTRYPOINT [ "/etc/init.sh" ]
 CMD [ "php-fpm83", "-F" ]
-# CMD ["tail", "-f", "/dev/null"]
