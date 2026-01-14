@@ -31,7 +31,7 @@ MARIADB = mariadb
 WORDPRESS = wordpress
 NGINX = nginx
 
-
+HOME_DIR := $(HOME)
 SRCS := srcs/
 REQS := $(SRCS)requirements/
 MARIADB_DIR := $(REQS)mariadb/
@@ -40,8 +40,7 @@ NGINX_DIR := $(REQS)nginx/
 ENV_FILE := $(SRCS).env
 YAML := $(SRCS)docker-compose.yml
 
-ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-VOLUMES_PATH := $(ROOT)data/
+VOLUMES_PATH := $(HOME_DIR)/data/
 DATABASE_VOLUME := $(VOLUMES_PATH)database/
 WEBSITE_VOLUME := $(VOLUMES_PATH)web/
 
@@ -67,10 +66,6 @@ list:
 	$(DOCKER) network ls
 
 up: data/database data/web
-	$(MKDIR) $(VOLUMES_PATH)
-	$(MKDIR) $(WEBSITE_VOLUME)
-	$(MKDIR) $(DATABASE_VOLUME)
-	mkdir -p /Users/arzelcm/devThings/42/Inception/data/web
 	$(PRINT) "$(BLUE)Deploying $(WHITE_BOLD)application$(BLUE)...$(RESET)"
 	cd $(SRCS) && $(DOCKER) compose up -d --build
 
